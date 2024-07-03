@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "717810590309",
+    "project_id": "test-brightcode",
+    "storage_bucket": "test-brightcode.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:717810590309:android:eceaff4a04f754bc719c8c",
+        "android_client_info": {
+          "package_name": "com.mycompany.brightcodetestedition"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRSApEYSjvdN2Ei_VgFRPecybSEQF2Lgw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:717810590309:android:7a046f1d5107ccbf719c8c",
+        "android_client_info": {
+          "package_name": "com.mycompany.filmapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRSApEYSjvdN2Ei_VgFRPecybSEQF2Lgw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
