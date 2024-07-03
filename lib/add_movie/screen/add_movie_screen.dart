@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -82,7 +83,7 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                 radius: 10,
                 width: double.infinity,
                 color: Colors.amber,
-                press: () {
+                press: () async {
                   try {
                     FirebaseFirestore.instance
                         .collection('movies')
@@ -90,7 +91,8 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                             title: title.text,
                             discription: disc.text,
                             gener: gener.text,
-                            image: image?.path ?? "",
+                            image: await uploadImage(
+                                File(image?.path ?? ""), title.text),
                             lenth: length.text,
                             year: int.parse(year.text),
                             trailerLInke: trailer.text))
@@ -139,6 +141,27 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
+    }
+  }
+
+  Future<String> uploadImage(File image, String movieName) async {
+    try {
+      final Reference storageReference = FirebaseStorage.instance
+          .ref('MoviesImages')
+          .child(movieName)
+          .child(
+              "${image.path.split('/').last}_${DateTime.now().millisecondsSinceEpoch}.jpg");
+
+      final UploadTask uploadTask = storageReference.putFile(image);
+      final TaskSnapshot downloadUrl = await uploadTask;
+
+      final String url = await downloadUrl.ref.getDownloadURL();
+      return url;
+    } catch (e) {
+      debugPrint('=========================');
+      debugPrint('Error uploading image: $e');
+      debugPrint('=========================');
+      return "";
     }
   }
 }

@@ -83,6 +83,7 @@ dependencies:
   cupertino_icons: ^1.0.0
   image_picker: ^1.1.2
   another_flushbar: ^1.12.30
+  firebase_storage: ^11.7.5
 
 dependency_overrides:
   http: 1.2.1
