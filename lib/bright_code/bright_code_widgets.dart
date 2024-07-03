@@ -1,8 +1,41 @@
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+// Slightly hacky method of getting the layout width of the provided text.
+double? _getTextWidth(String? text, TextStyle? style, int maxLines) =>
+    text != null
+        ? (TextPainter(
+            text: TextSpan(text: text, style: style),
+            textDirection: TextDirection.ltr,
+            maxLines: maxLines,
+          )..layout())
+            .size
+            .width
+        : null;
 
 class ButtonOptions {
+  final TextAlign? textAlign;
+
+  final TextStyle? textStyle;
+  final double? elevation;
+  final double? height;
+  final double? width;
+  final EdgeInsetsGeometry? padding;
+  final Color? color;
+  final Color? disabledColor;
+  final Color? disabledTextColor;
+  final int? maxLines;
+  final Color? splashColor;
+  final double? iconSize;
+  final Color? iconColor;
+  final EdgeInsetsGeometry? iconPadding;
+  final BorderRadius? borderRadius;
+  final BorderSide? borderSide;
+  final Color? hoverColor;
+  final BorderSide? hoverBorderSide;
+  final Color? hoverTextColor;
+  final double? hoverElevation;
   const ButtonOptions({
     this.textAlign,
     this.textStyle,
@@ -25,30 +58,16 @@ class ButtonOptions {
     this.hoverElevation,
     this.maxLines,
   });
-
-  final TextAlign? textAlign;
-  final TextStyle? textStyle;
-  final double? elevation;
-  final double? height;
-  final double? width;
-  final EdgeInsetsGeometry? padding;
-  final Color? color;
-  final Color? disabledColor;
-  final Color? disabledTextColor;
-  final int? maxLines;
-  final Color? splashColor;
-  final double? iconSize;
-  final Color? iconColor;
-  final EdgeInsetsGeometry? iconPadding;
-  final BorderRadius? borderRadius;
-  final BorderSide? borderSide;
-  final Color? hoverColor;
-  final BorderSide? hoverBorderSide;
-  final Color? hoverTextColor;
-  final double? hoverElevation;
 }
 
 class ButtonWidget extends StatefulWidget {
+  final String text;
+
+  final Widget? icon;
+  final IconData? iconData;
+  final Function()? onPressed;
+  final ButtonOptions options;
+  final bool showLoadingIndicator;
   const ButtonWidget({
     super.key,
     required this.text,
@@ -58,13 +77,6 @@ class ButtonWidget extends StatefulWidget {
     required this.options,
     this.showLoadingIndicator = true,
   });
-
-  final String text;
-  final Widget? icon;
-  final IconData? iconData;
-  final Function()? onPressed;
-  final ButtonOptions options;
-  final bool showLoadingIndicator;
 
   @override
   State<ButtonWidget> createState() => _ButtonWidgetState();
@@ -124,9 +136,9 @@ class _ButtonWidgetState extends State<ButtonWidget> {
         : null;
 
     ButtonStyle style = ButtonStyle(
-      shape: MaterialStateProperty.resolveWith<OutlinedBorder>(
+      shape: WidgetStateProperty.resolveWith<OutlinedBorder>(
         (states) {
-          if (states.contains(MaterialState.hovered) &&
+          if (states.contains(WidgetState.hovered) &&
               widget.options.hoverBorderSide != null) {
             return RoundedRectangleBorder(
               borderRadius:
@@ -141,43 +153,43 @@ class _ButtonWidgetState extends State<ButtonWidget> {
           );
         },
       ),
-      foregroundColor: MaterialStateProperty.resolveWith<Color?>(
+      foregroundColor: WidgetStateProperty.resolveWith<Color?>(
         (states) {
-          if (states.contains(MaterialState.disabled) &&
+          if (states.contains(WidgetState.disabled) &&
               widget.options.disabledTextColor != null) {
             return widget.options.disabledTextColor;
           }
-          if (states.contains(MaterialState.hovered) &&
+          if (states.contains(WidgetState.hovered) &&
               widget.options.hoverTextColor != null) {
             return widget.options.hoverTextColor;
           }
           return widget.options.textStyle?.color ?? Colors.white;
         },
       ),
-      backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+      backgroundColor: WidgetStateProperty.resolveWith<Color?>(
         (states) {
-          if (states.contains(MaterialState.disabled) &&
+          if (states.contains(WidgetState.disabled) &&
               widget.options.disabledColor != null) {
             return widget.options.disabledColor;
           }
-          if (states.contains(MaterialState.hovered) &&
+          if (states.contains(WidgetState.hovered) &&
               widget.options.hoverColor != null) {
             return widget.options.hoverColor;
           }
           return widget.options.color;
         },
       ),
-      overlayColor: MaterialStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(MaterialState.pressed)) {
+      overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(WidgetState.pressed)) {
           return widget.options.splashColor;
         }
         return widget.options.hoverColor == null ? null : Colors.transparent;
       }),
-      padding: MaterialStateProperty.all(widget.options.padding ??
+      padding: WidgetStateProperty.all(widget.options.padding ??
           const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0)),
-      elevation: MaterialStateProperty.resolveWith<double?>(
+      elevation: WidgetStateProperty.resolveWith<double?>(
         (states) {
-          if (states.contains(MaterialState.hovered) &&
+          if (states.contains(WidgetState.hovered) &&
               widget.options.hoverElevation != null) {
             return widget.options.hoverElevation!;
           }
@@ -231,14 +243,25 @@ class _ButtonWidgetState extends State<ButtonWidget> {
       );
     }
 
-    return SizedBox(
-      height: widget.options.height,
-      width: widget.options.width,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: style,
-        child: textWidget,
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: style,
+            child: textWidget,
+          ),
+        ),
+        if (text == "remove from list")
+          const Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: const Icon(
+              Icons.thumb_up,
+              color: Colors.white,
+              size: 30,
+            ),
+          )
+      ],
     );
   }
 }
@@ -274,15 +297,3 @@ extension _WithoutColorExtension on TextStyle {
         overflow: overflow,
       );
 }
-
-// Slightly hacky method of getting the layout width of the provided text.
-double? _getTextWidth(String? text, TextStyle? style, int maxLines) =>
-    text != null
-        ? (TextPainter(
-            text: TextSpan(text: text, style: style),
-            textDirection: TextDirection.ltr,
-            maxLines: maxLines,
-          )..layout())
-            .size
-            .width
-        : null;

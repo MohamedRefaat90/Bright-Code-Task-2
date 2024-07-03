@@ -1,23 +1,22 @@
+import 'package:flutter/material.dart';
+
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '../bright_code/bright_code_icon_button.dart';
 import '../bright_code/bright_code_theme.dart';
 import '../bright_code/bright_code_util.dart';
 import '../bright_code/bright_code_widgets.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'details_model.dart';
+
 export 'details_model.dart';
 
 class DetailsWidget extends StatefulWidget {
+  final DocumentReference? filmdeatilsParamiters;
+
   const DetailsWidget({
     super.key,
     required this.filmdeatilsParamiters,
   });
-
-  final DocumentReference? filmdeatilsParamiters;
 
   @override
   State<DetailsWidget> createState() => _DetailsWidgetState();
@@ -27,19 +26,6 @@ class _DetailsWidgetState extends State<DetailsWidget> {
   late DetailsModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-
-  @override
-  void initState() {
-    super.initState();
-    _model = createModel(context, () => DetailsModel());
-  }
-
-  @override
-  void dispose() {
-    _model.dispose();
-
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +65,7 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                 borderRadius: 30.0,
                 borderWidth: 1.0,
                 buttonSize: 60.0,
-                icon: Icon(
+                icon: const Icon(
                   Icons.arrow_back_rounded,
                   color: Colors.white,
                   size: 30.0,
@@ -97,14 +83,37 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                       letterSpacing: 0.0,
                     ),
               ),
-              actions: [],
+              actions: [
+                IconButton(
+                  onPressed: () {
+                    context.pushNamed(
+                      'editMovie',
+                      queryParameters: {
+                        'docID': widget.filmdeatilsParamiters!.id
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.edit),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  onPressed: () async {
+                    await widget.filmdeatilsParamiters!.delete();
+                    if (context.mounted) {
+                      context.pop();
+                    }
+                  },
+                  icon: const Icon(Icons.delete),
+                )
+              ],
               centerTitle: true,
               elevation: 2.0,
             ),
             body: SafeArea(
               top: true,
               child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
+                padding:
+                    const EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -127,6 +136,7 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                           children: [
                             Text(
                               detailsMoviesRecord.title,
+                              textAlign: TextAlign.end,
                               style: bright_codeTheme
                                   .of(context)
                                   .bodyMedium
@@ -203,7 +213,7 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                             .contains(currentUserReference) ==
                         false)
                       Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
                             20.0, 20.0, 20.0, 20.0),
                         child: ButtonWidget(
                           onPressed: () async {
@@ -229,11 +239,11 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                           options: ButtonOptions(
                             width: double.infinity,
                             height: 40.0,
-                            padding: EdgeInsetsDirectional.fromSTEB(
+                            padding: const EdgeInsetsDirectional.fromSTEB(
                                 24.0, 0.0, 24.0, 0.0),
-                            iconPadding: EdgeInsetsDirectional.fromSTEB(
+                            iconPadding: const EdgeInsetsDirectional.fromSTEB(
                                 0.0, 0.0, 0.0, 0.0),
-                            color: Color(0xFF5A0E0E),
+                            color: const Color(0xFF5A0E0E),
                             textStyle: bright_codeTheme
                                 .of(context)
                                 .titleSmall
@@ -243,7 +253,7 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                                   letterSpacing: 0.0,
                                 ),
                             elevation: 3.0,
-                            borderSide: BorderSide(
+                            borderSide: const BorderSide(
                               color: Colors.transparent,
                               width: 1.0,
                             ),
@@ -255,7 +265,7 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                             .contains(currentUserReference) ==
                         true)
                       Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
                             20.0, 20.0, 20.0, 20.0),
                         child: ButtonWidget(
                           onPressed: () async {
@@ -276,16 +286,21 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                                 },
                               ),
                             });
+
+                            Future.delayed(
+                              const Duration(seconds: 3),
+                              () => context.goNamed("home"),
+                            );
                           },
                           text: 'remove from list',
                           options: ButtonOptions(
                             width: double.infinity,
                             height: 40.0,
-                            padding: EdgeInsetsDirectional.fromSTEB(
+                            padding: const EdgeInsetsDirectional.fromSTEB(
                                 24.0, 0.0, 24.0, 0.0),
-                            iconPadding: EdgeInsetsDirectional.fromSTEB(
+                            iconPadding: const EdgeInsetsDirectional.fromSTEB(
                                 0.0, 0.0, 0.0, 0.0),
-                            color: Color(0xFF5A0E0E),
+                            color: const Color(0xFF5A0E0E),
                             textStyle: bright_codeTheme
                                 .of(context)
                                 .titleSmall
@@ -295,7 +310,7 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                                   letterSpacing: 0.0,
                                 ),
                             elevation: 3.0,
-                            borderSide: BorderSide(
+                            borderSide: const BorderSide(
                               color: Colors.transparent,
                               width: 1.0,
                             ),
@@ -304,11 +319,12 @@ class _DetailsWidgetState extends State<DetailsWidget> {
                         ),
                       ),
                     Align(
-                      alignment: AlignmentDirectional(-0.85, 0.0),
+                      alignment: const AlignmentDirectional(-0.85, 0.0),
                       child: Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
                             10.0, 25.0, 10.0, 10.0),
                         child: Text(
+                          textAlign: TextAlign.end,
                           detailsMoviesRecord.discription,
                           style:
                               bright_codeTheme.of(context).bodyMedium.override(
@@ -330,5 +346,19 @@ class _DetailsWidgetState extends State<DetailsWidget> {
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _model.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    print(widget.filmdeatilsParamiters!.id.toString());
+    _model = createModel(context, () => DetailsModel());
   }
 }

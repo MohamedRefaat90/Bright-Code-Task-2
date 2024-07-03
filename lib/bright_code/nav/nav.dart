@@ -1,33 +1,88 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
-import '/backend/backend.dart';
+import 'package:test_test/add_movie/screen/add_movie_screen.dart';
+import 'package:test_test/edit_movie/screen/edit_movie.dart';
 
 import '/auth/base_auth_user_provider.dart';
-
 import '/index.dart';
-import '/main.dart';
 import '../bright_code_theme.dart';
-import '../lat_lng.dart';
-import '../place.dart';
 import '../bright_code_util.dart';
-import 'serialization_util.dart';
 
 export 'package:go_router/go_router.dart';
+
 export 'serialization_util.dart';
 
 const kTransitionInfoKey = '__transition_info__';
 
+GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
+      initialLocation: '/',
+      debugLogDiagnostics: true,
+      refreshListenable: appStateNotifier,
+      errorBuilder: (context, state) =>
+          appStateNotifier.loggedIn ? const HomeWidget() : const Auth1Widget(),
+      routes: [
+        Route(
+          name: '_initialize',
+          path: '/',
+          builder: (context, _) => appStateNotifier.loggedIn
+              ? const HomeWidget()
+              : const Auth1Widget(),
+        ),
+        Route(
+          name: 'Auth1',
+          path: '/auth1',
+          builder: (context, params) => const Auth1Widget(),
+        ),
+        Route(
+          name: 'home',
+          path: '/home',
+          builder: (context, params) => const HomeWidget(),
+        ),
+        Route(
+          name: 'details',
+          path: '/details',
+          builder: (context, params) => DetailsWidget(
+            filmdeatilsParamiters: params.getParam(
+              'filmdeatilsParamiters',
+              ParamType.DocumentReference,
+              isList: false,
+              collectionNamePath: ['movies'],
+            ),
+          ),
+        ),
+        Route(
+          name: 'addMovie',
+          path: '/addMovie',
+          builder: (context, params) => AddMovieScreen(
+            filmdeatilsParamiters: params.getParam(
+              'filmdeatilsParamiters',
+              ParamType.DocumentReference,
+              isList: false,
+              collectionNamePath: ['movies'],
+            ),
+          ),
+        ),
+        Route(
+          name: 'editMovie',
+          path: '/editMovie',
+          builder: (context, params) => EditMovieScreen(
+            docID: params.getParam(
+              'docID',
+              ParamType.String,
+            ),
+          ),
+        )
+      ].map((r) => r.toRoute(appStateNotifier)).toList(),
+    );
+
 class AppStateNotifier extends ChangeNotifier {
-  AppStateNotifier._();
-
   static AppStateNotifier? _instance;
-  static AppStateNotifier get instance => _instance ??= AppStateNotifier._();
 
+  static AppStateNotifier get instance => _instance ??= AppStateNotifier._();
   BaseAuthUser? initialUser;
+
   BaseAuthUser? user;
   bool showSplashImage = true;
   String? _redirectLocation;
@@ -39,19 +94,22 @@ class AppStateNotifier extends ChangeNotifier {
   /// Otherwise, this will trigger a refresh and interrupt the action(s).
   bool notifyOnAuthChange = true;
 
+  AppStateNotifier._();
+
+  bool get initiallyLoggedIn => initialUser?.loggedIn ?? false;
   bool get loading => user == null || showSplashImage;
   bool get loggedIn => user?.loggedIn ?? false;
-  bool get initiallyLoggedIn => initialUser?.loggedIn ?? false;
   bool get shouldRedirect => loggedIn && _redirectLocation != null;
 
+  void clearRedirectLocation() => _redirectLocation = null;
   String getRedirectLocation() => _redirectLocation!;
   bool hasRedirect() => _redirectLocation != null;
   void setRedirectLocationIfUnset(String loc) => _redirectLocation ??= loc;
-  void clearRedirectLocation() => _redirectLocation = null;
 
-  /// Mark as not needing to notify on a sign in / out when we intend
-  /// to perform subsequent actions (such as navigation) afterwards.
-  void updateNotifyOnAuthChange(bool notify) => notifyOnAuthChange = notify;
+  void stopShowingSplashImage() {
+    showSplashImage = false;
+    notifyListeners();
+  }
 
   void update(BaseAuthUser newUser) {
     final shouldUpdate =
@@ -68,146 +126,26 @@ class AppStateNotifier extends ChangeNotifier {
     updateNotifyOnAuthChange(true);
   }
 
-  void stopShowingSplashImage() {
-    showSplashImage = false;
-    notifyListeners();
-  }
-}
-
-GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
-      initialLocation: '/',
-      debugLogDiagnostics: true,
-      refreshListenable: appStateNotifier,
-      errorBuilder: (context, state) =>
-          appStateNotifier.loggedIn ? HomeWidget() : Auth1Widget(),
-      routes: [
-        Route(
-          name: '_initialize',
-          path: '/',
-          builder: (context, _) =>
-              appStateNotifier.loggedIn ? HomeWidget() : Auth1Widget(),
-        ),
-        Route(
-          name: 'Auth1',
-          path: '/auth1',
-          builder: (context, params) => Auth1Widget(),
-        ),
-        Route(
-          name: 'home',
-          path: '/home',
-          builder: (context, params) => HomeWidget(),
-        ),
-        Route(
-          name: 'details',
-          path: '/details',
-          builder: (context, params) => DetailsWidget(
-            filmdeatilsParamiters: params.getParam(
-              'filmdeatilsParamiters',
-              ParamType.DocumentReference,
-              isList: false,
-              collectionNamePath: ['movies'],
-            ),
-          ),
-        )
-      ].map((r) => r.toRoute(appStateNotifier)).toList(),
-    );
-
-extension NavParamExtensions on Map<String, String?> {
-  Map<String, String> get withoutNulls => Map.fromEntries(
-        entries
-            .where((e) => e.value != null)
-            .map((e) => MapEntry(e.key, e.value!)),
-      );
-}
-
-extension NavigationExtensions on BuildContext {
-  void goNamedAuth(
-    String name,
-    bool mounted, {
-    Map<String, String> pathParameters = const <String, String>{},
-    Map<String, String> queryParameters = const <String, String>{},
-    Object? extra,
-    bool ignoreRedirect = false,
-  }) =>
-      !mounted || GoRouter.of(this).shouldRedirect(ignoreRedirect)
-          ? null
-          : goNamed(
-              name,
-              pathParameters: pathParameters,
-              queryParameters: queryParameters,
-              extra: extra,
-            );
-
-  void pushNamedAuth(
-    String name,
-    bool mounted, {
-    Map<String, String> pathParameters = const <String, String>{},
-    Map<String, String> queryParameters = const <String, String>{},
-    Object? extra,
-    bool ignoreRedirect = false,
-  }) =>
-      !mounted || GoRouter.of(this).shouldRedirect(ignoreRedirect)
-          ? null
-          : pushNamed(
-              name,
-              pathParameters: pathParameters,
-              queryParameters: queryParameters,
-              extra: extra,
-            );
-
-  void safePop() {
-    // If there is only one route on the stack, navigate to the initial
-    // page instead of popping.
-    if (canPop()) {
-      pop();
-    } else {
-      go('/');
-    }
-  }
-}
-
-extension GoRouterExtensions on GoRouter {
-  AppStateNotifier get appState => AppStateNotifier.instance;
-  void prepareAuthEvent([bool ignoreRedirect = false]) =>
-      appState.hasRedirect() && !ignoreRedirect
-          ? null
-          : appState.updateNotifyOnAuthChange(false);
-  bool shouldRedirect(bool ignoreRedirect) =>
-      !ignoreRedirect && appState.hasRedirect();
-  void clearRedirectLocation() => appState.clearRedirectLocation();
-  void setRedirectLocationIfUnset(String location) =>
-      appState.updateNotifyOnAuthChange(false);
-}
-
-extension _GoRouterStateExtensions on GoRouterState {
-  Map<String, dynamic> get extraMap =>
-      extra != null ? extra as Map<String, dynamic> : {};
-  Map<String, dynamic> get allParams => <String, dynamic>{}
-    ..addAll(pathParameters)
-    ..addAll(uri.queryParameters)
-    ..addAll(extraMap);
-  TransitionInfo get transitionInfo => extraMap.containsKey(kTransitionInfoKey)
-      ? extraMap[kTransitionInfoKey] as TransitionInfo
-      : TransitionInfo.appDefault();
+  /// Mark as not needing to notify on a sign in / out when we intend
+  /// to perform subsequent actions (such as navigation) afterwards.
+  void updateNotifyOnAuthChange(bool notify) => notifyOnAuthChange = notify;
 }
 
 class Parameters {
-  Parameters(this.state, [this.asyncParams = const {}]);
-
   final GoRouterState state;
-  final Map<String, Future<dynamic> Function(String)> asyncParams;
 
+  final Map<String, Future<dynamic> Function(String)> asyncParams;
   Map<String, dynamic> futureParamValues = {};
 
+  Parameters(this.state, [this.asyncParams = const {}]);
+
+  bool get hasFutures => state.allParams.entries.any(isAsyncParam);
   // Parameters are empty if the params map is empty or if the only parameter
   // present is the special extra parameter reserved for the transition info.
   bool get isEmpty =>
       state.allParams.isEmpty ||
       (state.allParams.length == 1 &&
           state.extraMap.containsKey(kTransitionInfoKey));
-  bool isAsyncParam(MapEntry<String, dynamic> param) =>
-      asyncParams.containsKey(param.key) && param.value is String;
-  bool get hasFutures => state.allParams.entries.any(isAsyncParam);
   Future<bool> completeFutures() => Future.wait(
         state.allParams.entries.where(isAsyncParam).map(
           (param) async {
@@ -221,7 +159,6 @@ class Parameters {
           },
         ),
       ).onError((_, __) => [false]).then((v) => v.every((e) => e));
-
   dynamic getParam<T>(
     String paramName,
     ParamType type, {
@@ -247,9 +184,39 @@ class Parameters {
       collectionNamePath: collectionNamePath,
     );
   }
+
+  bool isAsyncParam(MapEntry<String, dynamic> param) =>
+      asyncParams.containsKey(param.key) && param.value is String;
+}
+
+class RootPageContext {
+  final bool isRootPage;
+  final String? errorRoute;
+  const RootPageContext(this.isRootPage, [this.errorRoute]);
+
+  static bool isInactiveRootPage(BuildContext context) {
+    final rootPageContext = context.read<RootPageContext?>();
+    final isRootPage = rootPageContext?.isRootPage ?? false;
+    final location = GoRouterState.of(context).uri.toString();
+    return isRootPage &&
+        location != '/' &&
+        location != rootPageContext?.errorRoute;
+  }
+
+  static Widget wrap(Widget child, {String? errorRoute}) => Provider.value(
+        value: RootPageContext(true, errorRoute),
+        child: child,
+      );
 }
 
 class Route {
+  final String name;
+
+  final String path;
+  final bool requireAuth;
+  final Map<String, Future<dynamic> Function(String)> asyncParams;
+  final Widget Function(BuildContext, Parameters) builder;
+  final List<GoRoute> routes;
   const Route({
     required this.name,
     required this.path,
@@ -258,13 +225,6 @@ class Route {
     this.asyncParams = const {},
     this.routes = const [],
   });
-
-  final String name;
-  final String path;
-  final bool requireAuth;
-  final Map<String, Future<dynamic> Function(String)> asyncParams;
-  final Widget Function(BuildContext, Parameters) builder;
-  final List<GoRoute> routes;
 
   GoRoute toRoute(AppStateNotifier appStateNotifier) => GoRoute(
         name: name,
@@ -333,6 +293,11 @@ class Route {
 }
 
 class TransitionInfo {
+  final bool hasTransition;
+
+  final PageTransitionType transitionType;
+  final Duration duration;
+  final Alignment? alignment;
   const TransitionInfo({
     required this.hasTransition,
     this.transitionType = PageTransitionType.fade,
@@ -340,32 +305,21 @@ class TransitionInfo {
     this.alignment,
   });
 
-  final bool hasTransition;
-  final PageTransitionType transitionType;
-  final Duration duration;
-  final Alignment? alignment;
-
-  static TransitionInfo appDefault() => TransitionInfo(hasTransition: false);
+  static TransitionInfo appDefault() =>
+      const TransitionInfo(hasTransition: false);
 }
 
-class RootPageContext {
-  const RootPageContext(this.isRootPage, [this.errorRoute]);
-  final bool isRootPage;
-  final String? errorRoute;
-
-  static bool isInactiveRootPage(BuildContext context) {
-    final rootPageContext = context.read<RootPageContext?>();
-    final isRootPage = rootPageContext?.isRootPage ?? false;
-    final location = GoRouterState.of(context).uri.toString();
-    return isRootPage &&
-        location != '/' &&
-        location != rootPageContext?.errorRoute;
-  }
-
-  static Widget wrap(Widget child, {String? errorRoute}) => Provider.value(
-        value: RootPageContext(true, errorRoute),
-        child: child,
-      );
+extension GoRouterExtensions on GoRouter {
+  AppStateNotifier get appState => AppStateNotifier.instance;
+  void clearRedirectLocation() => appState.clearRedirectLocation();
+  void prepareAuthEvent([bool ignoreRedirect = false]) =>
+      appState.hasRedirect() && !ignoreRedirect
+          ? null
+          : appState.updateNotifyOnAuthChange(false);
+  void setRedirectLocationIfUnset(String location) =>
+      appState.updateNotifyOnAuthChange(false);
+  bool shouldRedirect(bool ignoreRedirect) =>
+      !ignoreRedirect && appState.hasRedirect();
 }
 
 extension GoRouterLocationExtension on GoRouter {
@@ -376,4 +330,70 @@ extension GoRouterLocationExtension on GoRouter {
         : routerDelegate.currentConfiguration;
     return matchList.uri.toString();
   }
+}
+
+extension NavigationExtensions on BuildContext {
+  void goNamedAuth(
+    String name,
+    bool mounted, {
+    Map<String, String> pathParameters = const <String, String>{},
+    Map<String, String> queryParameters = const <String, String>{},
+    Object? extra,
+    bool ignoreRedirect = false,
+  }) =>
+      !mounted || GoRouter.of(this).shouldRedirect(ignoreRedirect)
+          ? null
+          : goNamed(
+              name,
+              pathParameters: pathParameters,
+              queryParameters: queryParameters,
+              extra: extra,
+            );
+
+  void pushNamedAuth(
+    String name,
+    bool mounted, {
+    Map<String, String> pathParameters = const <String, String>{},
+    Map<String, String> queryParameters = const <String, String>{},
+    Object? extra,
+    bool ignoreRedirect = false,
+  }) =>
+      !mounted || GoRouter.of(this).shouldRedirect(ignoreRedirect)
+          ? null
+          : pushNamed(
+              name,
+              pathParameters: pathParameters,
+              queryParameters: queryParameters,
+              extra: extra,
+            );
+
+  void safePop() {
+    // If there is only one route on the stack, navigate to the initial
+    // page instead of popping.
+    if (canPop()) {
+      pop();
+    } else {
+      go('/');
+    }
+  }
+}
+
+extension NavParamExtensions on Map<String, String?> {
+  Map<String, String> get withoutNulls => Map.fromEntries(
+        entries
+            .where((e) => e.value != null)
+            .map((e) => MapEntry(e.key, e.value!)),
+      );
+}
+
+extension _GoRouterStateExtensions on GoRouterState {
+  Map<String, dynamic> get allParams => <String, dynamic>{}
+    ..addAll(pathParameters)
+    ..addAll(uri.queryParameters)
+    ..addAll(extraMap);
+  Map<String, dynamic> get extraMap =>
+      extra != null ? extra as Map<String, dynamic> : {};
+  TransitionInfo get transitionInfo => extraMap.containsKey(kTransitionInfoKey)
+      ? extraMap[kTransitionInfoKey] as TransitionInfo
+      : TransitionInfo.appDefault();
 }

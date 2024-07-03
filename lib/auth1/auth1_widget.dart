@@ -3,14 +3,10 @@ import '../bright_code/bright_code_animations.dart';
 import '../bright_code/bright_code_theme.dart';
 import '../bright_code/bright_code_util.dart';
 import '../bright_code/bright_code_widgets.dart';
-import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'auth1_model.dart';
 export 'auth1_model.dart';
 
@@ -203,7 +199,7 @@ class _Auth1WidgetState extends State<Auth1Widget>
                                             shape: BoxShape.circle,
                                           ),
                                           child: Image.network(
-                                            'https://www8.0zz0.com/2024/07/01/22/692829652.jpg',
+                                            'https://h.top4top.io/p_310420kmv1.jpg',
                                             fit: BoxFit.cover,
                                           ),
                                         ),
